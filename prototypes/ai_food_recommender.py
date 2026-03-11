@@ -3,7 +3,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from ai_tools import AITools
-from poi_data import POI_DATA, DEFAULT_LOCATIONS, TIME_SLOTS, FLAVOR_PREFERENCES
+from poi_data import POI_DATA, DEFAULT_LOCATIONS, TIME_SLOTS, FLAVOR_PREFERENCES, get_poi_data
 import random
 
 class AIFoodRecommender:
@@ -35,11 +35,16 @@ class AIFoodRecommender:
         self.ai_tools = AITools(api_key)
         self.poi_data = POI_DATA
         self.model = model
+        self.db = get_poi_data()
     
     def get_cities(self):
+        if self.db:
+            return self.db.get_all_cities()
         return list(POI_DATA.keys())
     
     def get_categories(self, city):
+        if self.db:
+            return self.db.get_categories_by_city(city)
         if city in POI_DATA:
             return list(POI_DATA[city].keys())
         return []
@@ -68,6 +73,23 @@ class AIFoodRecommender:
         return self.ai_tools.generate_content(prompt, system_prompt=self.SYSTEM_PROMPT, model=model or self.model)
     
     def _search_restaurants(self, city, category, flavor, time_slot):
+        if self.db:
+            db_results = self.db.get_restaurants(city, category, flavor)
+            results = []
+            for r in db_results:
+                restaurant = {
+                    "name": r.get("name"),
+                    "category": r.get("category"),
+                    "distance": r.get("distance"),
+                    "rating": float(r.get("rating", 0)),
+                    "tags": r.get("tags", "").split(",") if r.get("tags") else [],
+                    "price": r.get("price"),
+                    "address": r.get("address")
+                }
+                restaurant["match_score"] = self._calculate_match_score(restaurant, flavor)
+                results.append(restaurant)
+            return results
+        
         results = []
         
         if city not in POI_DATA:

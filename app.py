@@ -94,8 +94,31 @@ def main():
         **核心功能：**
         - AI 探店脚本生成
         - 商家营销文案创作
-        - LBS 美食推荐
+        - LBS 美食推荐（支持PostgreSQL数据库）
         """)
+        
+        st.markdown("### 🗄️ 数据库设置")
+        db_host = st.text_input("数据库主机", value="localhost")
+        db_port = st.text_input("端口", value="5432")
+        db_name = st.text_input("数据库名", value="local_service")
+        db_user = st.text_input("用户名", value="postgres")
+        db_password = st.text_input("密码", type="password")
+        
+        if st.button("测试数据库连接"):
+            import os
+            os.environ['DB_HOST'] = db_host
+            os.environ['DB_PORT'] = db_port
+            os.environ['DB_NAME'] = db_name
+            os.environ['DB_USER'] = db_user
+            os.environ['DB_PASSWORD'] = db_password
+            
+            from prototypes.database import Database
+            db = Database()
+            success, msg = db.test_connection()
+            if success:
+                st.success(f"连接成功! {msg}")
+            else:
+                st.error(f"连接失败: {msg}")
         
         st.markdown("### ⚙️ 设置")
         

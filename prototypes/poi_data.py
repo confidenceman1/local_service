@@ -11,7 +11,7 @@ POI_DATA = {
             {"name": "木屋烧烤(望京店)", "category": "烧烤", "distance": "6.2km", "rating": 4.4, "tags": ["连锁店", "食材新鲜", "味道稳定"], "price": "人均85元", "address": "望京SOHO"},
         ],
         "日料": [
-            {"name": "鮨·日本料理(国贸店)", "category": "日料", "distance": "1.5km", "rating": 4.9, "tags": [" omakase", "高端", "食材进口"], "price": "人均400元", "address": "国贸商城"},
+            {"name": "鮨·日本料理(国贸店)", "category": "日料", "distance": "1.5km", "rating": 4.9, "tags": ["omakase", "高端", "食材进口"], "price": "人均400元", "address": "国贸商城"},
             {"name": "大雄寿司(三里屯店)", "category": "日料", "distance": "4.8km", "rating": 4.7, "tags": ["平价日料", "寿司新鲜", "老板热情"], "price": "人均120元", "address": "三里屯3.3大厦"},
         ],
         "川菜": [
@@ -33,7 +33,7 @@ POI_DATA = {
             {"name": "电台巷火锅(长宁来福士店)", "category": "火锅", "distance": "3.2km", "rating": 4.5, "tags": ["地道成都味", "排队王", "辣"], "price": "人均120元", "address": "长宁来福士"},
         ],
         "日料": [
-            {"name": "割烹·哲(古北店)", "category": "日料", "distance": "4.5km", "rating": 4.9, "tags": [" omakase", "主厨推荐", "隐蔽"], "price": "人均500元", "address": "古北财富中心"},
+            {"name": "割烹·哲(古北店)", "category": "日料", "distance": "4.5km", "rating": 4.9, "tags": ["omakase", "主厨推荐", "隐蔽"], "price": "人均500元", "address": "古北财富中心"},
             {"name": "大江户日本料理(虹口店)", "category": "日料", "distance": "2.8km", "rating": 4.6, "tags": ["放题", "刺身拼盘", "性价比高"], "price": "人均200元", "address": "虹口足球场"},
         ],
     },
@@ -106,3 +106,17 @@ FLAVOR_PREFERENCES = {
     "清淡": ["清炒", "白灼", "蒸", "沙拉"],
     "重口": ["烧烤", "炸", "红烧", "干锅"],
 }
+
+
+def get_poi_data():
+    """获取POI数据（从数据库或本地）"""
+    try:
+        from database import RestaurantDB
+        db = RestaurantDB()
+        cities = db.get_all_cities()
+        if cities:
+            return db
+    except Exception as e:
+        print(f"Database not available, using mock data: {e}")
+    
+    return None
