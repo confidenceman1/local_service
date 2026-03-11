@@ -2,6 +2,11 @@
 数据库初始化脚本
 用于创建数据库表并导入示例数据
 """
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 

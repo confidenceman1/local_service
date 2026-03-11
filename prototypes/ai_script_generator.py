@@ -122,7 +122,9 @@ class AIScriptGenerator:
 
 
 if __name__ == "__main__":
-    generator = AIScriptGenerator(api_key="sk-7f7393fa2df44cfdabd40561651179f1")
+    import os
+    api_key = os.environ.get("DASHSCOPE_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    generator = AIScriptGenerator(api_key=api_key)
     
     store_info = {
         "name": "海底捞火锅",

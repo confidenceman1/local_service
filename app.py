@@ -1,6 +1,9 @@
 import streamlit as st
 import sys
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'prototypes'))
 
@@ -82,7 +85,7 @@ def main():
         
         selected = st.radio(
             "选择功能模块",
-            ["🏠 首页", "🎬 AI探店脚本", "📝 营销文案", "🍜 美食推荐"]
+            ["🏠 首页", "🎬 AI探店脚本", "📝 营销文案", "🍜 美食推荐", "🖼️ 图片美化"]
         )
         
         st.markdown("---")
@@ -95,43 +98,22 @@ def main():
         - AI 探店脚本生成
         - 商家营销文案创作
         - LBS 美食推荐（支持PostgreSQL数据库）
+        
+        **数据库配置（环境变量）：**
+        - DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
         """)
-        
-        st.markdown("### 🗄️ 数据库设置")
-        db_host = st.text_input("数据库主机", value="localhost")
-        db_port = st.text_input("端口", value="5432")
-        db_name = st.text_input("数据库名", value="local_service")
-        db_user = st.text_input("用户名", value="postgres")
-        db_password = st.text_input("密码", type="password")
-        
-        if st.button("测试数据库连接"):
-            import os
-            os.environ['DB_HOST'] = db_host
-            os.environ['DB_PORT'] = db_port
-            os.environ['DB_NAME'] = db_name
-            os.environ['DB_USER'] = db_user
-            os.environ['DB_PASSWORD'] = db_password
-            
-            from prototypes.database import Database
-            db = Database()
-            success, msg = db.test_connection()
-            if success:
-                st.success(f"连接成功! {msg}")
-            else:
-                st.error(f"连接失败: {msg}")
         
         st.markdown("### ⚙️ 设置")
         
-        col1, col2 = st.columns(2)
-        with col1:
-            api_key = st.text_input("阿里云百炼 API Key", type="password", help="输入 sk-xxx 格式的密钥")
-        with col2:
-            model = st.selectbox("选择模型", ["qwen-turbo (推荐)", "qwen-plus", "qwen-max"], index=0)
+        api_key = os.environ.get("DASHSCOPE_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        model = st.selectbox("选择模型", ["qwen-turbo", "qwen-plus", "qwen-max"], index=0)
         
         if api_key:
             st.session_state["api_key"] = api_key
-            st.session_state["model"] = model.split(" ")[0]
-            st.success("API Key 已设置 ✅")
+            st.session_state["model"] = model
+            st.success("API Key 已配置 ✅")
+        else:
+            st.warning("请设置环境变量 DASHSCOPE_API_KEY")
     
     if selected == "🏠 首页":
         show_homepage()
@@ -141,6 +123,8 @@ def main():
         show_marketing_generator()
     elif selected == "🍜 美食推荐":
         show_food_recommender()
+    elif selected == "🖼️ 图片美化":
+        show_image_enhancer()
 
 
 def show_homepage():
@@ -452,6 +436,124 @@ def show_food_recommender():
                         time_slot="晚餐"
                     )
                     st.markdown(example_result)
+
+
+def show_image_enhancer():
+    """图片美化工具"""
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'prototypes'))
+    from image_enhancer import get_enhancer
+    
+    st.markdown("""
+    ## 🖼️ 商户图片美化工具
+    
+    上传商品图片，AI自动美化，适合餐饮商家展示菜品
+    """)
+    
+    # 功能选择
+    st.markdown("### 📸 选择功能")
+    func_option = st.radio(
+        "功能",
+        ["🍽️ 美食增强", "🔲 背景去除", "🎨 风格化"],
+        horizontal=True
+    )
+    
+    # 上传图片
+    st.markdown("### 📤 上传图片")
+    uploaded_file = st.file_uploader(
+        "选择图片文件",
+        type=['jpg', 'jpeg', 'png', 'webp'],
+        help="支持 jpg, png, webp 格式"
+    )
+    
+    if uploaded_file:
+        # 保存上传的图片
+        import tempfile
+        import shutil
+        
+        # 创建临时目录
+        temp_dir = tempfile.mkdtemp()
+        input_path = os.path.join(temp_dir, uploaded_file.name)
+        output_path = os.path.join(temp_dir, f"output_{uploaded_file.name}")
+        
+        # 保存上传文件
+        with open(input_path, 'wb') as f:
+            f.write(uploaded_file.getbuffer())
+        
+        # 显示原图
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("#### 📷 原图")
+            st.image(input_path, use_container_width=True)
+        
+        # 处理选项
+        enhance_type = "food"
+        style = "food_gourmet"
+        
+        if func_option == "🍽️ 美食增强":
+            st.markdown("#### ✨ 美食增强")
+            enhance_type = st.select_slider(
+                "增强类型",
+                options=["food", "general", "quality"],
+                format_func=lambda x: {"food": "🍽️ 美食增强", "general": "🌟 通用增强", "quality": "🔍 画质提升"}[x],
+                value="food"
+            )
+        elif func_option == "🔲 背景去除":
+            st.markdown("#### ✨ 背景去除")
+            st.info("去除图片背景，突出商品主体，适合菜单制作")
+        elif func_option == "🎨 风格化":
+            st.markdown("#### ✨ 风格化")
+            style = st.select_slider(
+                "风格",
+                options=["food_gourmet", "anime", "oil_painting"],
+                format_func=lambda x: {"food_gourmet": "🍜 美食风格", "anime": "🎌 动漫风格", "oil_painting": "🖼️ 油画风格"}[x],
+                value="food_gourmet"
+            )
+        
+        # 处理按钮
+        if st.button("🚀 开始处理", type="primary"):
+            with st.spinner("AI 正在处理图片..."):
+                enhancer = get_enhancer(st.session_state.get("api_key"))
+                
+                if func_option == "🍽️ 美食增强":
+                    success, result = enhancer.enhance_image(input_path, output_path, enhance_type)
+                elif func_option == "🔲 背景去除":
+                    success, result = enhancer.remove_background(input_path, output_path)
+                else:
+                    success, result = enhancer.stylize_image(input_path, output_path, style)
+                
+                if success:
+                    with col2:
+                        st.markdown("#### ✨ 处理结果")
+                        st.image(output_path, use_container_width=True)
+                        
+                        # 下载按钮
+                        with open(output_path, 'rb') as f:
+                            st.download_button(
+                                label="📥 下载图片",
+                                data=f.read(),
+                                file_name=f"enhanced_{uploaded_file.name}",
+                                mime=uploaded_file.type
+                            )
+                else:
+                    st.error(f"处理失败: {result}")
+        
+        # 清理临时文件
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    
+    else:
+        st.info("👆 请上传图片文件开始处理")
+        
+        # 示例
+        st.markdown("---")
+        st.markdown("### 💡 使用场景")
+        st.markdown("""
+        - **餐饮商家**: 菜品照片美化，让食物看起来更诱人
+        - **菜单制作**: 去除背景，制作专业菜单
+        - **外卖平台**: 菜品图片优化，提升下单率
+        - **社交媒体**: 一键风格化，发朋友圈更吸睛
+        """)
 
 
 if __name__ == "__main__":
